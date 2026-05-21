@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Quadro de Satisfação do Cliente</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff;
+    --bg-secondary: #f5f5f3;
+    --bg-tertiary: #efede8;
+    --text: #1a1a18;
+    --text-secondary: #5f5e5a;
+    --text-tertiary: #888780;
+    --border: rgba(0,0,0,0.12);
+    --border-md: rgba(0,0,0,0.22);
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --green: #1D9E75;
+    --green-bg: #E1F5EE;
+    --green-text: #085041;
+    --amber: #BA7517;
+    --amber-bg: #FAEEDA;
+    --amber-text: #633806;
+    --red: #E24B4A;
+    --red-bg: #FCEBEB;
+    --red-text: #A32D2D;
+    --blue-bg: #E6F1FB;
+    --blue-text: #0C447C;
+    --purple-bg: #EEEDFE;
+    --purple-text: #3C3489;
+    --star: #EF9F27;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1e1e1c;
+      --bg-secondary: #2a2a28;
+      --bg-tertiary: #252523;
+      --text: #f0ede8;
+      --text-secondary: #b4b2a9;
+      --text-tertiary: #6e6d69;
+      --border: rgba(255,255,255,0.1);
+      --border-md: rgba(255,255,255,0.2);
+      --green-bg: #04342c;
+      --green-text: #9FE1CB;
+      --amber-bg: #412402;
+      --amber-text: #FAC775;
+      --red-bg: #501313;
+      --red-text: #F7C1C1;
+      --blue-bg: #042c53;
+      --blue-text: #B5D4F4;
+      --purple-bg: #26215c;
+      --purple-text: #CECBF6;
+    }
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--bg-tertiary);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 900px; margin: 0 auto; }
+  .page-header { margin-bottom: 2rem; }
+  .page-header h1 { font-size: 22px; font-weight: 500; margin-bottom: 4px; }
+  .page-header p { font-size: 14px; color: var(--text-secondary); }
+  .top-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; margin-bottom: 1.5rem; }
+  .btn-add {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; font-weight: 500; padding: 9px 16px;
+    border-radius: var(--radius-md); cursor: pointer;
+    background: var(--green); border: none; color: #fff;
+  }
+  .btn-add:hover { background: #0F6E56; }
+  .btn-export {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; padding: 9px 14px;
+    border-radius: var(--radius-md); cursor: pointer;
+    background: transparent; border: 0.5px solid var(--border-md); color: var(--text-secondary);
+  }
+  .btn-export:hover { background: var(--bg-secondary); }
+  .actions { display: flex; gap: 8px; }
+  .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+  .metric {
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+  }
+  .metric-label { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+  .metric-value { font-size: 26px; font-weight: 500; }
+  .metric-value.good { color: var(--green); }
+  .metric-value.mid { color: var(--amber); }
+  .metric-value.bad { color: var(--red); }
+  .card {
+    background: var(--bg);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+  .card-title { font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.04em; font-size: 11px; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    text-align: left; padding: 10px 12px;
+    font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--text-secondary); border-bottom: 0.5px solid var(--border);
+    white-space: nowrap;
+  }
+  td { padding: 11px 12px; border-bottom: 0.5px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--bg-secondary); }
+  .badge { display: inline-block; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .badge.entrega { background: var(--blue-bg); color: var(--blue-text); }
+  .badge.fase { background: var(--green-bg); color: var(--green-text); }
+  .badge.etapa { background: var(--purple-bg); color: var(--purple-text); }
+  .badge.reuniao { background: var(--amber-bg); color: var(--amber-text); }
+  .score-pill {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 50%;
+    font-size: 13px; font-weight: 500; flex-shrink: 0;
+  }
+  .s5 { background: var(--green-bg); color: var(--green-text); }
+  .s4 { background: #EAF3DE; color: #3B6D11; }
+  .s3 { background: var(--amber-bg); color: var(--amber-text); }
+  .s2 { background: #FAECE7; color: #993C1D; }
+  .s1 { background: var(--red-bg); color: var(--red-text); }
+  .stars { display: flex; gap: 1px; }
+  .star { font-size: 13px; }
+  .star.on { color: var(--star); }
+  .star.off { color: var(--border-md); }
+  .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-tertiary); font-size: 14px; }
+  .empty-state i { font-size: 32px; display: block; margin-bottom: 10px; opacity: 0.4; }
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45); z-index: 200;
+    align-items: center; justify-content: center; padding: 1rem;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg); border-radius: var(--radius-lg);
+    border: 0.5px solid var(--border); padding: 1.75rem;
+    width: 420px; max-width: 100%; max-height: 90vh; overflow-y: auto;
+  }
+  .modal h2 { font-size: 16px; font-weight: 500; margin-bottom: 1.25rem; }
+  .field { margin-bottom: 14px; }
+  .field label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 5px; font-weight: 500; }
+  .field input, .field select, .field textarea {
+    width: 100%; padding: 8px 10px; border-radius: var(--radius-md);
+    border: 0.5px solid var(--border-md); background: var(--bg-secondary);
+    color: var(--text); font-size: 13px; font-family: inherit;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: none; border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(29,158,117,0.15);
+  }
+  .field textarea { height: 70px; resize: vertical; }
+  .star-pick { display: flex; gap: 8px; margin-top: 4px; }
+  .star-pick span { font-size: 28px; cursor: pointer; color: var(--border-md); transition: color 0.1s; user-select: none; }
+  .star-pick span.sel { color: var(--star); }
+  .star-label { font-size: 11px; color: var(--text-secondary); margin-top: 4px; min-height: 16px; }
+  .modal-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 20px; }
+  .btn-cancel {
+    padding: 9px 16px; border-radius: var(--radius-md); font-size: 13px;
+    background: transparent; border: 0.5px solid var(--border-md); color: var(--text-secondary); cursor: pointer;
+  }
+  .btn-save {
+    padding: 9px 16px; border-radius: var(--radius-md); font-size: 13px;
+    background: var(--green); border: none; color: #fff; cursor: pointer; font-weight: 500;
+  }
+  .btn-save:hover { background: #0F6E56; }
+  .del-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--text-tertiary); font-size: 15px; padding: 4px 6px; border-radius: 4px;
+  }
+  .del-btn:hover { background: var(--red-bg); color: var(--red); }
+  .score-cell { display: flex; align-items: center; gap: 7px; }
+  .filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .filter-btn {
+    padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;
+    border: 0.5px solid var(--border-md); background: transparent;
+    color: var(--text-secondary); cursor: pointer;
+  }
+  .filter-btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+  @media (max-width: 600px) {
+    .hide-mobile { display: none; }
+    td, th { padding: 8px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="page-header">
+    <h1>Satisfação do cliente</h1>
+    <p>Monitoramento mensal · avalie entregas, fases, etapas e reuniões · nota de 1 a 5</p>
+  </div>
+
+  <div class="top-bar">
+    <div class="actions">
+      <button class="btn-add" onclick="openModal()">
+        <i class="ti ti-plus"></i> Registrar avaliação
+      </button>
+      <button class="btn-export" onclick="exportCSV()">
+        <i class="ti ti-download"></i> Exportar CSV
+      </button>
+    </div>
+  </div>
+
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">Média geral</div><div class="metric-value" id="m-avg">—</div></div>
+    <div class="metric"><div class="metric-label">Total de registros</div><div class="metric-value" id="m-total">0</div></div>
+    <div class="metric"><div class="metric-label">Mês atual</div><div class="metric-value" id="m-month">—</div></div>
+    <div class="metric"><div class="metric-label">Satisfeitos (≥ 4)</div><div class="metric-value" id="m-sat">—</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Média de satisfação por mês</div>
+    <div style="position: relative; width: 100%; height: 220px;">
+      <canvas id="trendChart" role="img" aria-label="Gráfico de linha com média mensal de satisfação"></canvas>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Registros de avaliações</div>
+    <div class="filter-bar" id="filter-bar">
+      <button class="filter-btn active" data-filter="todos" onclick="setFilter('todos',this)">Todos</button>
+      <button class="filter-btn" data-filter="entrega" onclick="setFilter('entrega',this)">Entregas</button>
+      <button class="filter-btn" data-filter="fase" onclick="setFilter('fase',this)">Fases</button>
+      <button class="filter-btn" data-filter="etapa" onclick="setFilter('etapa',this)">Etapas</button>
+      <button class="filter-btn" data-filter="reuniao" onclick="setFilter('reuniao',this)">Reuniões</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Cliente / Projeto</th>
+            <th>Tipo</th>
+            <th class="hide-mobile">Descrição</th>
+            <th>Nota</th>
+            <th class="hide-mobile">Comentário</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="tb"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <h2>Registrar avaliação</h2>
+    <div class="field">
+      <label>Data</label>
+      <input type="date" id="f-date" />
+    </div>
+    <div class="field">
+      <label>Cliente / Projeto</label>
+      <input type="text" id="f-client" placeholder="ex: Acme Corp – Projeto Alpha" />
+    </div>
+    <div class="field">
+      <label>Tipo de marco</label>
+      <select id="f-type">
+        <option value="entrega">Entrega</option>
+        <option value="fase">Fase</option>
+        <option value="etapa">Etapa</option>
+        <option value="reuniao">Reunião</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Descrição do marco</label>
+      <input type="text" id="f-desc" placeholder="ex: Entrega do módulo de relatórios" />
+    </div>
+    <div class="field">
+      <label>Nota de satisfação</label>
+      <div class="star-pick" id="star-pick">
+        <span data-v="1" title="Muito insatisfeito">★</span>
+        <span data-v="2" title="Insatisfeito">★</span>
+        <span data-v="3" title="Neutro">★</span>
+        <span data-v="4" title="Satisfeito">★</span>
+        <span data-v="5" title="Muito satisfeito">★</span>
+      </div>
+      <div class="star-label" id="star-label">Clique para selecionar</div>
+    </div>
+    <div class="field">
+      <label>Comentário (opcional)</label>
+      <textarea id="f-comment" placeholder="Observações ou pontos de melhoria..."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-save" onclick="saveEntry()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const LABELS = { 1:'Muito insatisfeito', 2:'Insatisfeito', 3:'Neutro', 4:'Satisfeito', 5:'Muito satisfeito' };
+const TYPE_LABEL = { entrega:'Entrega', fase:'Fase', etapa:'Etapa', reuniao:'Reunião' };
+const STORAGE_KEY = 'satisfacao_v1';
+
+let entries = loadData();
+let nextId = entries.length ? Math.max(...entries.map(e=>e.id)) + 1 : 1;
+let selectedScore = 0;
+let activeFilter = 'todos';
+let chartInst = null;
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : defaultData();
+  } catch { return defaultData(); }
+}
+function saveData() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); } catch {}
+}
+function defaultData() {
+  return [
+    { id:1, date:'2025-01-15', client:'Acme Corp', type:'entrega', desc:'Módulo de relatórios', score:4, comment:'Prazo cumprido, pequenos ajustes pendentes.' },
+    { id:2, date:'2025-01-28', client:'Beta Ltda', type:'reuniao', desc:'Alinhamento de escopo Q1', score:5, comment:'Equipe muito preparada.' },
+    { id:3, date:'2025-02-10', client:'Acme Corp', type:'fase', desc:'Fase 1 – Levantamento', score:3, comment:'Alguns atrasos no cronograma.' },
+    { id:4, date:'2025-02-22', client:'Gama SA', type:'etapa', desc:'Homologação do ambiente', score:4, comment:'' },
+    { id:5, date:'2025-03-05', client:'Beta Ltda', type:'entrega', desc:'API de integração', score:5, comment:'Excelente qualidade.' },
+    { id:6, date:'2025-03-20', client:'Gama SA', type:'reuniao', desc:'Revisão de sprint', score:2, comment:'Comunicação precisa melhorar.' },
+    { id:7, date:'2025-04-08', client:'Acme Corp', type:'entrega', desc:'Dashboard executivo', score:4, comment:'' },
+    { id:8, date:'2025-04-25', client:'Delta Inc', type:'fase', desc:'Fase 2 – Desenvolvimento', score:5, comment:'Superou expectativas.' },
+    { id:9, date:'2025-05-12', client:'Gama SA', type:'etapa', desc:'Testes de aceitação', score:3, comment:'Bugs encontrados em produção.' },
+  ];
+}
+
+function fmtDate(d) {
+  const [y,m,day] = d.split('-');
+  return `${day}/${m}/${y}`;
+}
+function scoreClass(s) { return ['','s1','s2','s3','s4','s5'][s]||''; }
+
+function render() {
+  const tb = document.getElementById('tb');
+  const filtered = activeFilter === 'todos' ? entries : entries.filter(e => e.type === activeFilter);
+  const sorted = [...filtered].sort((a,b) => b.date.localeCompare(a.date));
+
+  if (!sorted.length) {
+    tb.innerHTML = `<tr><td colspan="7"><div class="empty-state"><i class="ti ti-mood-empty"></i>Nenhuma avaliação encontrada.</div></td></tr>`;
+  } else {
+    tb.innerHTML = sorted.map(e => `
+      <tr>
+        <td style="white-space:nowrap;color:var(--text-secondary)">${fmtDate(e.date)}</td>
+        <td style="font-weight:500">${e.client}</td>
+        <td><span class="badge ${e.type}">${TYPE_LABEL[e.type]}</span></td>
+        <td class="hide-mobile" style="color:var(--text-secondary);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.desc}</td>
+        <td>
+          <div class="score-cell">
+            <span class="score-pill ${scoreClass(e.score)}">${e.score}</span>
+            <div class="stars">${[1,2,3,4,5].map(i=>`<span class="star ${i<=e.score?'on':'off'}">★</span>`).join('')}</div>
+          </div>
+        </td>
+        <td class="hide-mobile" style="color:var(--text-secondary);font-size:12px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.comment||'—'}</td>
+        <td><button class="del-btn" onclick="del(${e.id})" aria-label="Excluir"><i class="ti ti-trash"></i></button></td>
+      </tr>`).join('');
+  }
+  updateMetrics();
+  updateChart();
+}
+
+function updateMetrics() {
+  const total = entries.length;
+  document.getElementById('m-total').textContent = total;
+  if (!total) {
+    ['m-avg','m-month','m-sat'].forEach(id => {
+      document.getElementById(id).textContent = '—';
+      document.getElementById(id).className = 'metric-value';
+    });
+    return;
+  }
+  const avg = entries.reduce((s,e)=>s+e.score,0)/total;
+  const el = document.getElementById('m-avg');
+  el.textContent = avg.toFixed(1);
+  el.className = 'metric-value ' + (avg>=4?'good':avg>=3?'mid':'bad');
+
+  const now = new Date();
+  const curM = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const mE = entries.filter(e=>e.date.startsWith(curM));
+  const mEl = document.getElementById('m-month');
+  if (mE.length) {
+    const mAvg = mE.reduce((s,e)=>s+e.score,0)/mE.length;
+    mEl.textContent = mAvg.toFixed(1);
+    mEl.className = 'metric-value ' + (mAvg>=4?'good':mAvg>=3?'mid':'bad');
+  } else {
+    mEl.textContent = '—';
+    mEl.className = 'metric-value';
+  }
+
+  const sat = entries.filter(e=>e.score>=4).length;
+  const pct = Math.round(sat/total*100);
+  document.getElementById('m-sat').textContent = pct + '%';
+  document.getElementById('m-sat').className = 'metric-value ' + (pct>=70?'good':pct>=50?'mid':'bad');
+}
+
+function getMonthlyData() {
+  const map = {};
+  entries.forEach(e => {
+    const k = e.date.substring(0,7);
+    if (!map[k]) map[k] = [];
+    map[k].push(e.score);
+  });
+  const keys = Object.keys(map).sort();
+  const months = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  return {
+    labels: keys.map(k => { const [y,m] = k.split('-'); return months[parseInt(m)-1]+'/'+y.slice(2); }),
+    avgs: keys.map(k => parseFloat((map[k].reduce((s,v)=>s+v,0)/map[k].length).toFixed(2))),
+  };
+}
+
+function updateChart() {
+  const { labels, avgs } = getMonthlyData();
+  const ctx = document.getElementById('trendChart');
+  if (chartInst) { chartInst.destroy(); }
+  if (!labels.length) return;
+  const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  chartInst = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Média',
+        data: avgs,
+        borderColor: '#1D9E75',
+        backgroundColor: isDark ? 'rgba(29,158,117,0.12)' : 'rgba(29,158,117,0.08)',
+        pointBackgroundColor: avgs.map(v=>v>=4?'#1D9E75':v>=3?'#BA7517':'#E24B4A'),
+        pointBorderColor: avgs.map(v=>v>=4?'#1D9E75':v>=3?'#BA7517':'#E24B4A'),
+        pointRadius: 5, pointHoverRadius: 7,
+        tension: 0.3, fill: true, borderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: c => ' Média: ' + c.parsed.y.toFixed(1) + ' — ' + LABELS[Math.round(c.parsed.y)] } }
+      },
+      scales: {
+        y: {
+          min: 0, max: 5.5,
+          ticks: { stepSize: 1, callback: v => v<=5?v:'', color: isDark?'#888780':'#888780', font:{size:11} },
+          grid: { color: isDark?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.06)' },
+          border: { display: false }
+        },
+        x: {
+          ticks: { color: isDark?'#888780':'#888780', font:{size:11}, autoSkip:false, maxRotation:30 },
+          grid: { display: false }, border: { display: false }
+        }
+      }
+    }
+  });
+}
+
+function del(id) {
+  if (!confirm('Remover este registro?')) return;
+  entries = entries.filter(e=>e.id!==id);
+  saveData(); render();
+}
+
+function setFilter(f, btn) {
+  activeFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+
+function openModal() {
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('f-date').value = today;
+  document.getElementById('f-client').value = '';
+  document.getElementById('f-desc').value = '';
+  document.getElementById('f-comment').value = '';
+  document.getElementById('f-type').value = 'entrega';
+  selectedScore = 0;
+  updateStars(0);
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+
+const starPick = document.getElementById('star-pick');
+starPick.addEventListener('click', e => {
+  const t = e.target.closest('[data-v]');
+  if (!t) return;
+  selectedScore = parseInt(t.dataset.v);
+  updateStars(selectedScore);
+});
+starPick.addEventListener('mouseover', e => {
+  const t = e.target.closest('[data-v]');
+  if (t) updateStars(parseInt(t.dataset.v));
+});
+starPick.addEventListener('mouseleave', () => updateStars(selectedScore));
+
+function updateStars(n) {
+  starPick.querySelectorAll('span').forEach(s => s.classList.toggle('sel', parseInt(s.dataset.v)<=n));
+  document.getElementById('star-label').textContent = n ? LABELS[n] : 'Clique para selecionar';
+}
+
+function saveEntry() {
+  const date = document.getElementById('f-date').value;
+  const client = document.getElementById('f-client').value.trim();
+  const type = document.getElementById('f-type').value;
+  const desc = document.getElementById('f-desc').value.trim();
+  const comment = document.getElementById('f-comment').value.trim();
+  if (!date || !client || !desc || !selectedScore) {
+    alert('Preencha data, cliente, descrição e selecione uma nota.');
+    return;
+  }
+  entries.push({ id: nextId++, date, client, type, desc, score: selectedScore, comment });
+  saveData(); closeModal(); render();
+}
+
+function exportCSV() {
+  const header = ['Data','Cliente / Projeto','Tipo','Descrição','Nota','Legenda','Comentário'];
+  const rows = [...entries].sort((a,b)=>b.date.localeCompare(a.date)).map(e =>
+    [fmtDate(e.date), e.client, TYPE_LABEL[e.type], e.desc, e.score, LABELS[e.score], e.comment||'']
+      .map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')
+  );
+  const csv = [header.join(','), ...rows].join('\n');
+  const blob = new Blob(['\uFEFF'+csv], { type:'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'satisfacao-clientes.csv';
+  a.click();
+}
+
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+});
+
+render();
+</script>
+</body>
+</html>
